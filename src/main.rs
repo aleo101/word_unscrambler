@@ -1,6 +1,6 @@
-//Programmer: Alexander Leones 
+//Programmer: Alexander Leones
 //Date: 2021-12-14
-// This program returns an exhaustive list of english words that can be formed 
+// This program returns an exhaustive list of english words that can be formed
 // using no-more and no-less than every letter in a provided string.
 /////// Credits: ///////////
 //find_all_words alogorithm was first published by Pham Trung at:
@@ -11,11 +11,34 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 
 fn main() {
+    let mut scrambled_word: String;
+    loop {
+        scrambled_word = String::new();
+        println!("Enter a scrambled word:");
+        let b1 = std::io::stdin().read_line(&mut scrambled_word);
+        match b1 {
+            Ok(_) => {
+                let mut is_a_letter = true;
+                for c in scrambled_word.trim_end().chars() {
+                    if !c.is_alphabetic() {
+                        println!("Invalid input, make sure the scrambled word is alphabetic.");
+                        is_a_letter = false;
+                        break;
+                    }
+                }
+                if is_a_letter {
+                    break;
+                }
+            }
+            Err(_) => println!("Invalid input, try again."),
+        };
+    }
     println!(
         "{:?}",
         find_valid_words(
             /*replace following string with scrambled word you wish to unscramble. */
-            "iverdfdsdafefrgsfcrervrs"
+            //"iverdfdsdafefrgsfcrervrs"
+            scrambled_word.as_str().trim()
         )
     );
 }
