@@ -7,8 +7,59 @@
 // https://stackoverflow.com/a/25298960
 // dictionary txt file can be found at https://github.com/dwyl/english-words
 
+use std::array;
+use std::collections::{HashMap,};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
+mod does_contain;
+/*
+How it will work:
+
+Enter rows previous to your guess of the correct word.
+    - enter rows as vector of 5 tuple pairs.
+    - each tuple's second value will be either:
+        - 0 for grey
+        - 1 for yellow
+        - 2 for green
+with this input:
+    - go through each dictionary word, finding only words that contain all green/yellow letters and which don't contain grey.
+    - further filter out words based off correct and incorrect positioning.
+        - for each of the 5 char ix's, exclude all words that either contain a letter that was yellow at that ix, and further exclude
+          words that don't contain the letter that is green at that ix.
+
+add the int from every tuple to dict of all leters to get if the word ever appears in the word as green or yellow.
+*/
+
+fn get_input() -> Vec<[(char, usize); 5]> {
+    vec![
+        [('s', 0), ('a', 0), ('l', 0), ('e', 1), ('t', 1)],
+        [('p', 1), ('e', 1), ('t', 1), ('t', 0), ('y', 0)],
+    ]
+}
+
+fn determine_letters(touples: &Vec<[(char, usize); 5]>) -> (Vec<char>, Vec<char>, HashMap<char, usize>) {
+    let mut known_letters = HashMap::new();
+    let mut letter_map:[HashMap<char, usize>; 5] = [HashMap::new(), HashMap::new(), HashMap::new(), HashMap::new(), HashMap::new(),];
+    
+    for arr in touples {
+        for t in arr {
+            if *known_letters.entry(t.0).or_insert(t.1) < t.1 {
+                known_letters.insert(t.0, t.1);
+            }
+        }
+    }
+
+    let mut green_or_yello: Vec<char> = vec![];
+    let mut grey: Vec<char> = vec![];
+    for letters in &known_letters {
+        if letters.1 > &0 {
+            green_or_yello.push(*letters.0);
+        } else {
+            grey.push(*letters.0);
+        }
+    }
+    (green_or_yello, grey, known_letters) // temporary return
+}
 
 fn main() {
     // let mut scrambled_word: String;
@@ -41,10 +92,49 @@ fn main() {
     //         scrambled_word.as_str().trim()
     //     )
     // );
-    let mut possible_words =
-        find_words_with_known_and_unknown(&['y'], &['s', 'a', 'l', 'e', 't', 'd', 'o', 'r', 'k']);
-    possible_words.retain(|x| x.chars().nth(4).unwrap() != 'y');
+
+
+    // let mut possible_words =
+    //     find_words_with_known_and_unknown(&['p', 'e', 't'], &['s', 'a', 'l', 'y']);
+    // possible_words.retain(|x| {
+    //     !x.starts_with('p')
+    //         && x.chars().nth(1).unwrap() != 'e'
+    //         && x.chars().nth(2).unwrap() != 't'
+    //         && x.chars().nth(3).unwrap() != 'e'
+    //         && x.chars().nth(4).unwrap() != 't'
+    // });
+    // println!("{:?}", possible_words)
+    let input = get_input();
+    let vectors = determine_letters(&input);
+    let mut possible_words = find_words_with_known_and_unknown(&vectors.0, &vectors.1);
+    // possible_words.retain(|x| {
+    //     !x.starts_with('p')
+    //         && x.chars().nth(1).unwrap() != 'e'
+    //         && x.chars().nth(2).unwrap() != 't'
+    //         && x.chars().nth(3).unwrap() != 'e'
+    //         && x.chars().nth(4).unwrap() != 't'
+    // });
+
+    possible_words.retain(|x| {
+        for arr in &input {
+            let mut ix = 0;
+            for letter in arr {
+                if letter.1 == 1 {
+                    if x.chars().nth(ix).unwrap() == letter.0 {
+                        return false;
+                    }
+                } else if letter.1 == 2 {
+                    if x.chars().nth(ix).unwrap() != letter.0 {
+                        return false;
+                    }
+                }
+                ix+=1;
+            }
+        }
+        true
+    });
     println!("{:?}", possible_words)
+
 }
 
 // fn find_valid_words(letters: &str) -> Vec<String> {
@@ -135,22 +225,19 @@ fn find_words_with_known_and_unknown(letters_in: &[char], letters_out: &[char]) 
         let word = word.unwrap();
         if word.chars().count() == 5 {
             for letter in letters_in {
-                let mut l = String::new();
-                l.push(*letter);
-                if !word.contains(&l) {
+                if !word.contains(*letter) {
                     //word_is_valid = false;
-                    break 'outer;
+                    continue 'outer;
                 }
             }
             for letter in letters_out {
                 if word.contains(*letter) {
                     // word_is_valid = false;
-                    break 'outer;
+                    continue 'outer;
                 }
             }
             result.push(word);
         }
-
     }
     result
 }
